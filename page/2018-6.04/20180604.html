@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<head>
+
+	<title>poions blog</title>
+	<meta name="keywords" content="" />
+	<meta name="description" content="" />
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link href="/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+	<link href="/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+	<link href="/css/templatemo_style.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+	<div class="templatemo-logo visible-xs-block">
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 black-bg logo-left-container">
+			<h1 class="logo-left">Black</h1>
+		</div>
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 white-bg logo-right-container">
+			<h1 class="logo-right">White</h1>
+		</div>
+	</div>
+	<div class="templatemo-container">
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 black-bg left-container">
+			<h1 class="logo-left hidden-xs margin-bottom-60">Black</h1>
+			<div class="tm-left-inner-container">
+				<ul class="nav nav-stacked templatemo-nav">
+				  <li><a href="\index.html"><i class="fa fa-home fa-medium"></i>首页</a></li>
+				  <li><a href="\web.html" class="active"><i class="fa fa-shopping-cart fa-medium"></i>Web安全</a></li>
+				  <li><a href="\ctf.html"><i class="fa fa-send-o fa-medium"></i>CTF</a></li>
+				  <li><a href="\zawen.html"><i class="fa fa-comments-o fa-medium"></i>杂文</a></li>
+				  <li><a href="\contact.html"><i class="fa fa-envelope-o fa-medium"></i>联系方式</a></li>
+				</ul>
+			</div>
+		</div>
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 white-bg right-container">
+			<h1 class="logo-right hidden-xs margin-bottom-60">White</h1>
+			<div class="tm-right-inner-container">
+				<h1 class="templatemo-header"><strong>WebShellScan设计原理设想</strong></h1>
+				<article class="templatemo-item">
+				 </br>
+				<h1 class="templatemo-header"><strong>0x01 概述</strong></h1>
+				<span>
+					<strong>
+				<font face="verdana" color="green">
+				最近由于工作的关系，经常需要去收集一些webshell然后利用正则匹配的方式来设计匹配规则，为了检测规则的健壮性造了个轮子；然后又结合了自己在学习机器学习的过程中发现一些有趣的东西一方面也在这里记录下巩固梳理一下知识点。
+				</font>
+				</strong>
+			</br>
+			<br />
+			<br />
+			<hr/>
+
+
+		<h1 class="templatemo-header"><strong>0x02 基于正则匹配的webshell扫描器工作原理</strong></h1>
+		<strong>
+			静态检测中常见webshellScan大多数都是通过正则表达式的方法来对文件加载匹配恶意字段来判断该文件是否是木马。
+		</strong>
+
+			<img src="images\20180604161432.png" alt="frist" class="img-thumbnail">
+			<p>1.规则获取：github上有许多开源规则，当然也可以使用一些商用扫描器的匹配规则，在原有的规则上面不断更新迭代。</p>
+			<p>2.目录遍历：在python语言中时间循环遍历目录下的所有文件可以使用os.walk来实现；<pre>for root , dirs, files in os.walk(mypath):
+    print(root)
+    print(dirs)
+    print(files)</pre></p>
+			<p>3.过滤文件：在循环条件内使用name.endswith('php')来筛选想要的文件</p>
+			<p>4.读取文件内容：读取过程中把所有结果放入到数组最后用双循环来迭代匹配<pre>for i,c in zip(rule_data,rule_id):</pre></p>
+			<p>5.以上都是踩过的坑得出较好的方法</p>
+			<hr/>
+			
+			
+			<h1 class="templatemo-header"><strong>0x03 机器学习下的webshell检测原理</strong></h1>
+			<p>在利用机器学习的方式来检测webshell相比利用正则的方式来检测要复杂的多。</p>
+			<img src="images\20180604170902.png" alt="frist" class="img-thumbnail">
+			<p>这个流程图是目前自己慢慢要去实现的东西，在这个过程发现了一个有趣的东西---特征化</p>
+			<hr/>
+			
+			<h1 class="templatemo-header"><strong>0x02 特征化处理</strong></h1>		
+			<p>利用正则方式来检测Webshell带来的误报问题非常严重，在处理误报的问题时候往往会面临一些选择问题，是否要放弃掉一些命中率很高但是误报也高的规则；十分让人头疼</p>
+			<p>最近看到这个特征工程，想到是否可以利用特征工程来对正则带来的误报问题减轻</p>
+			<p>在机器学习中webshell检测经常会用到ADFA-LD数据集来记录了函数的调用序列，把每个文件包含的函数调用序列个数都不一致，用词集模型进行特征化;而我们借助其他关键点来提取新的特征</p>
+			<p>1、文件重合指数判断（简称IC判断）<pre>1.Σ(fi * (fi-1))/N(N-1)    ：fi 代表样本中某个字母出现的比率，N代表字母出现在样本中的个数</pre>
+			通过计算，我们可以得到以下两个值：
+			<pre>english的IC值为0.0667，english中一个完全随机的字符串的IC值为0.0385</pre>
+			那么这两个值有什么意义呢？简单来说（english），加密文件的IC值接近0.0385;明文文件的IC值接近0.0667
+			好了，那么我们就可以计算每个文件的IC值，如果这个文件的IC值接近0.0385，那么我们认为它是加密的，而一个web中加密的文件一般就意味着它是个为了逃避检测的webshell。
+			</p>
+			<p>2、求信息熵</p>
+			<p>信息熵是一个数学上颇为抽象的概念，在这里不妨把信息熵理解成某种特定信息的出现概率（离散随机事件的出现概率）。一个系统越是有序，信息熵就越低；反之，一个系统越是混乱，信息熵就越高。信息熵也可以说是系统有序化程度的一个度量。
+				熵是从整个集合的统计特性来考虑的，它从平均意义上来表征信源的总体特征，其公式为：</p>
+			<img src="images\20180604173601.png" alt="frist" class="img-thumbnail">
+
+			<p>3、文件创建修改时间的前后对比</p>
+			</p>一个web目录内，文件的创建时间和修改时间往往不会有太大的出入，个别情况例外；在这种条件下我们需要想的是webshell之所以能出现在服务器里面的几个方式：</p>
+			<pre>1.命令执行漏洞  
+2.代码执行漏洞
+3.上传漏洞
+</pre>
+			<p>根据这三种方式所产生的木马，在大多数情况下创建时间一定会跟原有目录下的文件有异;结果一些实际环境情况进行分析：</p>
+			<p>1.主要前提：命中规则</p>
+			<p>2.文件创建时间</p>
+			<p>3.文件修改时间</p>
+			<p>4.文件创建时间跟目录其他文件创建时间匹配</p>
+			<p>在文件修改时间减去创建时间得出的值若大于或小于0那么该文件已被进行修改过，若值等于0则该文件是没有被修改过则进行和其他目录下文件创建时间进行匹配。这种方法听说去真的超级傻，但在测试中确实对一些特殊条件有帮助。</p>
+			<img src="images\20180604180151.png" alt="frist" class="img-thumbnail">
+			<p>拿到命中规则的文件后可以看到，误报挺多的；放置了三个webshell全部命中，但是误报多达27个</p>
+			<p>(项目地址:https://github.com/poions/webshellScan)</p>
+			<p>利用计算获取未作修改的“木马”</p>
+			<pre>
+for t in list_files_name:
+        #print(t)
+        ctimestamp = os.path.getctime(t)
+        mtimestamp = os.path.getmtime(t)
+        old_ctimestamp = datetime.datetime.fromtimestamp(ctimestamp)
+        old_mtimestamp = datetime.datetime.fromtimestamp(mtimestamp)
+        #print('最近创建时间是: ', old_ctimestamp.strftime('%Y-%m-%d %H:%M:%S'))
+        #print('最近修改时间是: ', old_mtimestamp.strftime('%Y-%m-%d %H:%M:%S'))
+        webshell_old_ctimestamp_a = old_ctimestamp.strftime('%Y%m%d%H%M')
+        webshell_old_mtimestamp_a = old_mtimestamp.strftime('%Y%m%d%H%M')
+        #print(webshell_old_ctimestamp_a,webshell_old_mtimestamp_a,t)
+        webshell_old_ctimestamp.append(webshell_old_ctimestamp_a)
+        webshell_old_mtimestamp.append(webshell_old_mtimestamp_a)
+    webshell_old_ctimestamp_b = np.array(webshell_old_ctimestamp)
+    webshell_old_mtimestamp_b = np.array(webshell_old_mtimestamp)
+    for c_stamp_day,m_stamp_day in zip(webshell_old_ctimestamp_b,webshell_old_mtimestamp_b):
+        #print(c_stamp_day)
+        file_data_lenths = (int(c_stamp_day)-int(m_stamp_day))    
+        file_data_lenth.append(file_data_lenths)
+        #print(file_data_lenths)
+    for it in zip(list_files_name,file_data_lenth):
+        #print(it)
+        if 0 in it:
+            print(it)
+			</pre>
+			<p>最后的测试效果并未有预期的效果。</p>
+			
+<hr/>
+			</br>
+			</br>
+						by<span class="blue">：2018年6月4号</span><span class="green">下午6点钟</span>.</p>
+				<br/>
+
+
+
+		<!-- 文章修改 -->
+
+
+
+				</footer>
+			</div>
+		</div> <!-- right section -->
+	</div>
+</body>
+</html>

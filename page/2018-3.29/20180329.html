@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<head>
+
+	<title>poions blog</title>
+	<meta name="keywords" content="" />
+	<meta name="description" content="" />
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link href="/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+	<link href="/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+	<link href="/css/templatemo_style.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+	<div class="templatemo-logo visible-xs-block">
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 black-bg logo-left-container">
+			<h1 class="logo-left">Black</h1>
+		</div>
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 white-bg logo-right-container">
+			<h1 class="logo-right">White</h1>
+		</div>
+	</div>
+	<div class="templatemo-container">
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 black-bg left-container">
+			<h1 class="logo-left hidden-xs margin-bottom-60">Black</h1>
+			<div class="tm-left-inner-container">
+				<ul class="nav nav-stacked templatemo-nav">
+				  <li><a href="\index.html"><i class="fa fa-home fa-medium"></i>首页</a></li>
+				  <li><a href="\web.html" class="active"><i class="fa fa-shopping-cart fa-medium"></i>Web安全</a></li>
+				  <li><a href="\ctf.html"><i class="fa fa-send-o fa-medium"></i>CTF</a></li>
+				  <li><a href="\zawen.html"><i class="fa fa-comments-o fa-medium"></i>杂文</a></li>
+				  <li><a href="\contact.html"><i class="fa fa-envelope-o fa-medium"></i>联系方式</a></li>
+				</ul>
+			</div>
+		</div>
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 white-bg right-container">
+			<h1 class="logo-right hidden-xs margin-bottom-60">White</h1>
+			<div class="tm-right-inner-container">
+				<h1 class="templatemo-header"><strong>凡诺Cms漏洞利用</strong></h1>
+				<article class="templatemo-item">
+				 </br>
+				<h1 class="templatemo-header"><strong>0x01 概述</strong></h1>
+				<span>
+					<strong>
+				<font face="verdana" color="green">近段时间，在公司福利制度下开始对一些开源的系统源码进行代码审计挖掘漏洞，毫无疑问在利益的趋势下我破天荒地专心致志研究，便有了下面的挖掘过程。</font>
+				</strong>
+			</br>
+			<br />
+			<br />
+
+		 <h1 class="templatemo-header"><strong>0x02 前言</strong></h1>
+		 <p>
+			 这次挖掘过收获到两个漏洞，一个后台注入和另外一个文件包含；两个普通的不能在普通的漏洞，这次选择把它记录到博客上面来是因为纪念一下第一次向cnvd提交原创通用型漏洞（还有一次在16年，结果回复重复掉和前面一位提交者相隔2个月）和最后一次在蓝盾写博客。
+		 </p>
+			
+			</br>
+			<hr />
+		</br>
+
+		<h1 class="templatemo-header"><strong>0x03 漏洞分析</strong></h1>
+		<strong>
+			漏洞文件：cms_channel_add.php    channel.php
+			<br />漏洞参数：c_cmodel
+		</strong>
+		<p>由于没有对文件引用做限制，调用文件可控产生文件包漏洞，利用文件包含include的特性，包含带有php代码的图片格式文件形成包含木马获取服务器权限.</p>
+		<img src="images\20180329140212.jpg" alt="frist" class="img-thumbnail">
+		<br />
+		<strong>首先通过代码审计，后台文件:cms_channel_add.php</strong>
+		<p>
+			在save后接收post数据,包括获取c_cmodel，将c_cmodel数据传入$_data中
+				整合POST数据进入数组传参给$str
+					最后直接insert进入数据库。
+		<img src="images\20180329140430.jpg" alt="frist" class="img-thumbnail">
+		<p>整个过程为没有做任何限制，因此用户是对数据可控的。</p>
+		<p>构造跨目录语句：../../../../../</p>
+		<img src="images\20180329140602.jpg" alt="frist" class="img-thumbnail">
+		<p>提交后数据进入数据库，从数据库中可以看到提交的数据并未做任何过滤直接入库</p>
+		<img src="images\20180329140803.jpg" alt="frist" class="img-thumbnail">
+		<p>接下来查看channel.php文件</p>
+		<img src="images\20180329140934.jpg" alt="frist" class="img-thumbnail">
+		<p>获取id后将加载被存储在数据中的数据，下面看到加载的条件包含了刚才植入的c_cmodel。而在82行利用到include参数来包含c_cmodel变量，在未做限制的情况下include将包含的文件解析成php。通过刚才数据中查看到的id为27，也可以在前端页面查看生成的页面</p>
+		<img src="images\20180329141043.jpg" alt="frist" class="img-thumbnail">
+		</p>当点击该模块的时候，便加载包含的频道模型</p>
+		<img src="images\20180329141214.jpg" alt="frist" class="img-thumbnail">
+		<p>从报错的提示可以看出（在实战当中经常可以看到这种类型报错），在参数调用过程中使用了include函数进行调用其他文件使用，利用php特性；include()的文件中有使用php代码的情况下均以php解析给文件。因此利用上传方式，上传一张带有php代码的图片格式文件
+			绕过上传的限制，再利用包含解析图片成php文件达到文件包含getshell。</p>
+			<img src="images\20180329141624.jpg" alt="frist" class="img-thumbnail">
+			<p>这里利用编辑器的图片上传模块进行上传</p>
+			<img src="images\20180329141741.jpg" alt="frist" class="img-thumbnail">
+			<p>利用返回信息获取图片的路径,必须还得获取完整的物理路径</p>
+			<img src="images\20180329141947.jpg" alt="frist" class="img-thumbnail">
+			<p>访问报错页面http://127.0.0.1//fnq1.4/editor/php/file_manager_json.php?path=%2F&order=NAME&dir=image</p>
+			<img src="images\20180329142039.jpg" alt="frist" class="img-thumbnail">
+			<p>最后结合物理路径构造包含的图片地址</p>
+			<p>poc: ../../../../../../d://website//uploadfile//image//20180314//20180314154705_10326.jpg</p>
+			<img src="images\20180329142312.jpg" alt="frist" class="img-thumbnail">
+			<p>提示生成新的模板成功</p>
+			<img src="images\20180329142420.jpg" alt="frist" class="img-thumbnail">
+			<p>点击新的模板触发漏洞</p>
+			<img src="images\20180329142452.jpg" alt="frist" class="img-thumbnail">
+
+
+			<hr />
+
+				</br>
+
+				<h1 class="templatemo-header"><strong>0x04 结语</strong></h1>
+					<p>还有一个sql注入漏洞就不放出来了，并没有什么技术特点；在很多程序在开发的时候并不会注重后台的安全防御问题，导致利用弱口令或者其他漏洞进入到后台便很容易获取到webshell;</p>
+					<a href="files/pcfinal_cms_php_1.4.1.rar">下载改Cms</a>
+					<p>
+					即将离开一个奋斗了将近两年的地方很难说离别，但生活确确实实的是需要你去做一些改变才能获得更好的未来；未来一切安好，献给这里的一切！
+				</p>
+						<br>
+<hr/>
+			</br>
+			</br>
+						by<span class="blue">：2018年3月29号</span><span class="green">下午2点钟</span>.</p>
+				<br/>
+
+
+
+		<!-- 文章修改 -->
+
+
+
+				</footer>
+			</div>
+		</div> <!-- right section -->
+	</div>
+</body>
+</html>
