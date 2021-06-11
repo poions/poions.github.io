@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<head>
+
+	<title>poions blog</title>
+	<meta name="keywords" content="" />
+	<meta name="description" content="" />
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link href="/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+	<link href="/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+	<link href="/css/templatemo_style.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+	<div class="templatemo-logo visible-xs-block">
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 black-bg logo-left-container">
+			<h1 class="logo-left">Black</h1>
+		</div>
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 white-bg logo-right-container">
+			<h1 class="logo-right">White</h1>
+		</div>
+	</div>
+	<div class="templatemo-container">
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 black-bg left-container">
+			<h1 class="logo-left hidden-xs margin-bottom-60">Black</h1>
+			<div class="tm-left-inner-container">
+				<ul class="nav nav-stacked templatemo-nav">
+				  <li><a href="\index.html"><i class="fa fa-home fa-medium"></i>首页</a></li>
+				  <li><a href="\web.html" class="active"><i class="fa fa-shopping-cart fa-medium"></i>Web安全</a></li>
+				  <li><a href="\ctf.html"><i class="fa fa-send-o fa-medium"></i>CTF</a></li>
+				  <li><a href="\zawen.html"><i class="fa fa-comments-o fa-medium"></i>杂文</a></li>
+				  <li><a href="\contact.html"><i class="fa fa-envelope-o fa-medium"></i>联系方式</a></li>
+				</ul>
+			</div>
+		</div>
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 white-bg right-container">
+			<h1 class="logo-right hidden-xs margin-bottom-60">White</h1>
+			<div class="tm-right-inner-container">
+				<h1 class="templatemo-header"><strong>基于机器学习的PHPwebshell检测</strong></h1>
+				<article class="templatemo-item">
+				 </br>
+				<h1 class="templatemo-header"><strong>0x01 概述</strong></h1>
+				<span>
+					<strong>
+				<font face="verdana" color="green">
+				年末了，回想2018年在技术上最想达到的目标就是稍微弄懂机器学习和怎么使用；折腾了一年多现在算是可以真正尝试去做，尝试各种失败和各种调bug之后调试好别人开源的一个检测模型来进一步研究。
+				</font>
+				</strong>
+			</br>
+			<br />
+			<br />
+			<hr/>
+
+
+		<h1 class="templatemo-header"><strong>0x02 背景</strong></h1>
+		<strong>
+			静态检测中常见webshellScan大多数都是通过正则表达式的方法来对文件加载匹配恶意字段来判断该文件是否是木马，在这种检测方式中极容易出现误报或者漏洞检测名字率与规则强度相关，而误报率也与强度相关所以往往情况下
+			很难去捕捉到两者之间的平衡。
+		</strong>
+			<p>比如：</p>
+			<img src="images\201812291.jpg" alt="frist" class="img-thumbnail">
+			<p>1、数组元素拆分拼接组合，通过循环1-200取数组$a的第n-1+1个元素来进行组合拼接，最终会拼接成assert(${_POST}[x]);</p>
+			<img src="images\201812292.jpg" alt="frist" class="img-thumbnail">
+			<p>2、加塞特殊字符混淆拼接，直接通过不断的混淆---/*/等等特殊字符来混淆语句</p>
+			<p>2、dzCMS中的安全日志系统记录导致误报文件</p>
+			<p>以上的webshell案例，特征难以捕捉稍做改变正则规则都无法匹配到。
+				为弥补正则匹配的检测方式的缺陷，需要其他全新的检测机制来分析检测webshell
+				</p>
+			<hr/>
+			
+			
+			<h1 class="templatemo-header"><strong>0x03 机器学习下结合Agent的webshell检测原理</strong></h1>
+			<p>在利用机器学习的方式来检测webshell相比利用正则的方式来检测要复杂的多。</p>
+			<img src="images\201812293.jpg" alt="frist" class="img-thumbnail">
+			<p>目前企业级可结合agent跟spark进行数据收集检测和数据统计</p>
+			<hr/>
+			
+			<h1 class="templatemo-header"><strong>0x04 数据收集</strong></h1>	
+			<img src="images\15460706789228.png" alt="frist" class="img-thumbnail">	
+			<p>github</p>
+			<p>github所有可以获取到市面上绝大部分webshell不同种类，其次则从各种安全论坛和自己去变异一下webshell来加强样本的多样性<pre>https://github.com/tennc/webshell</pre>
+			通过去重，和筛选掉一些无用重复的webshell,如果样本中含有重复的数据类型，会影响样本训练中形成的模型数据。
+			</p>
+			<img src="images\201812294.png" alt="frist" class="img-thumbnail">	
+			<p>正常白样本，主要为各种热门cms</p>
+			<hr/>
+
+			<h1 class="templatemo-header"><strong>0x05 特征处理</strong></h1>
+			<p>样本的特征提取选择使用 PHP zend引擎下面的vld模块进行提取，主要通过以沙箱的方式执行完php文件提取文件的机器码。</p>
+			<img src="images\201812295.png" alt="frist" class="img-thumbnail">
+			<p>通过vld模块提权php文件的opcode机器码，将获取到的机器码计算出它的词频值形成向量矩阵并对应已经打标好的webshell的黑样本与正常文件的白样本，两者加载到一起后利用贝叶斯算法对数据进行预测混淆测试后得出便是完成的模型。</p>
+			<p>1.演示提取一个webshell的机器码</p>
+			<img src="images\201812296.png" alt="frist" class="img-thumbnail">
+			<p>2.提取完Opcode将白样本的opcode与黑样本opcode加载一起输出到文本保存。</p>
+			<hr/>
+
+
+			<h1 class="templatemo-header"><strong>0x06 训练数据</strong></h1>
+			<p>使用到的库（python）</p>
+			<pre>
+CountVectorizer		将加载opcode的文本数据转化为数值矩阵
+TfidfTransformer	将形成好的数值矩阵规范化为tf-idf逆向文本词频
+train_test_split	将形成好的文本词频进行随机交叉验证
+GaussianNB		朴素贝叶斯算法</pre>>	
+			<strong>输出训练模块</strong>
+			<img src="images\201812297.png" alt="frist" class="img-thumbnail">
+			<p>1、通过遍历文件寻找php文件形成函数，调用给opcode提取函数模块使用</p>
+			<p>2、opcode提权模块将提取到的opcode写入文本记录保存</p>
+			<p>3、CountVectorizer 使用说明</p>
+			<pre>
+ngram_range=(3, 3)		表明拆分的词组
+decode_error="ignore" 	表明忽略异常字符
+token_pattern = r'\b\w+\b'  提取opcode
+min_df=1				文档词频
+</pre>
+
+			<p>1.CountVectorizer主要是创建词袋数据结构</p>
+			<p>2.fit_transform 拟合数据然后标准化输出，保证每个维度的特征数据方差为1，均值为0，使得预测结果不会被某些维度过大的特征值而主导</p>
+			<p>3.TfidfTransformer 是统计CountVectorizer中每个词语的tf-idf权值</p>
+			<img src="images\201812298.png" alt="frist" class="img-thumbnail">
+			<p>其中，|D|表示语料中文本的总数，|Dti|表示文本中包含特征词ti的数量。分母+1是为了防止该词语在语料库中不存在，即分母为0</p>
+			<p>5.训练模块文本特征提取向量设置中，将ngram_range设置成3，3的opcode范围，min_df=1,max_df=1.0 默认设置去除100%出现的opcode.</p>
+			<p>调通训练模块后，执行训练，最后进行混淆矩阵验证数据：</p>
+			<img src="images\201812299.png" alt="frist" class="img-thumbnail">
+			<p>精确率在：96.29%</p>
+			<strong>精确率、召回率计算</strong>
+			<p>一般情况下，我们训练好模型之后需要做的是计算模型的召回率跟精确率等，以保证后续测试数据的准确性。</p>
+			<img src="images\2018122910.png" alt="frist" class="img-thumbnail">
+			<pre>
+其中：
+	将白样本预测为正常文件的数量为：101
+	将黑样本预测为webshell的数量为：470
+	Webshell漏报的数量为：15
+	正常样本误报的数量为：7
+	剩下的数据为训练损失数据
+			</pre>
+			<p>	预测正常样本的召回率公式：</p>
+			<img src="images\2018122911.png" alt="frist" class="img-thumbnail">
+			<p>	通过TP除以TP+FN ：0.9351851851851852  </p>
+			<p>	预测webshell样本的召回率公式：</p>
+			<img src="images\2018122912.png" alt="frist" class="img-thumbnail">
+			<p>	通过TN除以FP+TN ：0.9690721649484536</p>
+			<p>	Webshell的检出召回率达到96.90%</p>
+			
+			<strong>抽样检测</strong>
+			<p>使用漏报严重，且正则比较难捕捉的webshell</p>
+			<img src="images\2018122913.png" alt="frist" class="img-thumbnail">
+			<img src="images\2018122914.png" alt="frist" class="img-thumbnail">
+			<p>检测成功。</p>
+			<p>测试，常见误报php文件</p>
+			<img src="images\2018122915.png" alt="frist" class="img-thumbnail">
+			<p>测试未出现误报</p>
+			<strong>最后我打包成了线上环境:http://www.gian.tk:8000/scan</strong>
+			<p>文章中的整个过程源码我将它测试模块以及我训练好的模型和opcode数据放置在github中</p>
+<hr/>
+			</br>
+			</br>
+						by<span class="blue">：2018年12月19号</span><span class="green">下午4点钟</span>.</p>
+				<br/>
+
+
+
+		<!-- 文章修改 -->
+
+
+			</span>
+			</article>
+				</footer>
+			</div>
+		</div> <!-- right section -->
+	</div>
+</body>
+</html>

